@@ -313,22 +313,18 @@ public class ClientGUI extends javax.swing.JFrame implements IClientGui {
 
     @Override
     public void calculate() {
-        // Get input from text fields
         String name = txtName.getText();
         double weight = Double.parseDouble(txtWeight.getText());
         double height = Double.parseDouble(txtHeight.getText());
 
-        // Create Person object
         Person person = new Person(name, weight, height);
 
-        // Send request to server and get BMI result
         ClientRequestHandler requestHandler = new ClientRequestHandler();
         BMIResult bmiResult = requestHandler.sendRequestAndGetResponse(person);
         
-        this.txtWeight2.setText(Double.toString(weight));
-        this.txtHeight2.setText(Double.toString(height));
+        this.txtWeight2.setText(Double.toString(weight) + " kg");
+        this.txtHeight2.setText(Double.toString(height) + " cm");
         
-        // Display BMI result
         if (bmiResult != null) {
             txtResults.setText(String.format(person.getName() + ", your BMI is: %.2f - %s", bmiResult.getBmiValue(), bmiResult.getBmiMeaning()));
         } else {

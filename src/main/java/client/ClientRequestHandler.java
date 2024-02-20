@@ -4,39 +4,47 @@
  */
 package client;
 
-/**
- *
- * @author march
- */
 import domain.BMIResult;
 import domain.Person;
-import java.io.*;
-import java.net.Socket;
 import middleware.FileConverter;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class ClientRequestHandler {
     private static final int SERVER_PORT = 12345;
 
     public BMIResult sendRequestAndGetResponse(Person person) {
         try (Socket socket = new Socket("localhost", SERVER_PORT);
-             OutputStream outputStream = socket.getOutputStream();
-             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
              InputStream inputStream = socket.getInputStream();
-             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
+             OutputStream outputStream = socket.getOutputStream()) {
 
-            // Convert Person object to bytes
             byte[] requestData = FileConverter.objectToBytes(person);
 
-            // Send request to server
-            outputStream.write(requestData);
+            outputStream.write(ByteBuffer.allocate(4).putInt(requestData.length).array());
 
-            // Receive response from server
-            BMIResult bmiResult = (BMIResult) objectInputStream.readObject();
+            outputStream.write(requestData);
+            outputStream.flush();
+
+            byte[] lengthBytes = new byte[4];
+            inputStream.read(lengthBytes);
+            int length = ByteBuffer.wrap(lengthBytes).getInt();
+
+            byte[] responseData = new byte[length];
+            inputStream.read(responseData);
+
+            BMIResult bmiResult = (BMIResult) FileConverter.bytesToObject(responseData);
 
             return bmiResult;
-        } catch (IOException | ClassNotFoundException e) {
+
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 }
+

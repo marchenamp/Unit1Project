@@ -4,16 +4,18 @@
  */
 package server;
 
-/**
- *
- * @author march
- */
 import domain.BMIResult;
 import domain.Person;
-import java.io.*;
-import java.net.Socket;
 import middleware.BMICalculator;
 import middleware.FileConverter;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class RequestHandler extends Thread {
     private Socket socket;
@@ -25,24 +27,31 @@ public class RequestHandler extends Thread {
     @Override
     public void run() {
         try (InputStream inputStream = socket.getInputStream();
-             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+             BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
              OutputStream outputStream = socket.getOutputStream();
-             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)) {
+             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream)) {
 
-            // Receive request data from client
-            byte[] requestData = new byte[4096];
-            int bytesRead = inputStream.read(requestData);
+            byte[] lengthBytes = new byte[4];
+            bufferedInputStream.read(lengthBytes);
+            int length = ByteBuffer.wrap(lengthBytes).getInt();
 
-            // Convert request bytes to Person object
+            byte[] requestData = new byte[length];
+            bufferedInputStream.read(requestData);
+
             Person person = (Person) FileConverter.bytesToObject(requestData);
 
-            // Calculate BMI
             BMIResult bmiResult = BMICalculator.calculateBMI(person);
 
-            // Send BMIResult object to client
-            objectOutputStream.writeObject(bmiResult);
+            byte[] responseData = FileConverter.objectToBytes(bmiResult);
+
+            bufferedOutputStream.write(ByteBuffer.allocate(4).putInt(responseData.length).array());
+
+            bufferedOutputStream.write(responseData);
+            bufferedOutputStream.flush();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 }
+
