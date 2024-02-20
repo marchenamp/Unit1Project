@@ -33,17 +33,14 @@ public class RequestHandler extends Thread {
             byte[] requestData = new byte[4096];
             int bytesRead = inputStream.read(requestData);
 
-            // Convert request bytes to PersonInfo object
-            Person personInfo = (Person) FileConverter.bytesToObject(requestData);
+            // Convert request bytes to Person object
+            Person person = (Person) FileConverter.bytesToObject(requestData);
 
             // Calculate BMI
-            BMIResult bmiResult = BMICalculator.calculateBMI(personInfo);
+            BMIResult bmiResult = BMICalculator.calculateBMI(person);
 
-            // Create .tab file content
-            String tabContent = String.format("BMI Value\tMeaning\n%.2f\t%s", bmiResult.getBmiValue(), bmiResult.getBmiMeaning());
-
-            // Send .tab file content to client
-            outputStream.write(tabContent.getBytes());
+            // Send BMIResult object to client
+            objectOutputStream.writeObject(bmiResult);
         } catch (IOException e) {
             e.printStackTrace();
         }

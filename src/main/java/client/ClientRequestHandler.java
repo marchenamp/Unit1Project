@@ -24,24 +24,19 @@ public class ClientRequestHandler {
              InputStream inputStream = socket.getInputStream();
              ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)) {
 
-            // Convert PersonInfo object to bytes
+            // Convert Person object to bytes
             byte[] requestData = FileConverter.objectToBytes(person);
 
             // Send request to server
             outputStream.write(requestData);
 
             // Receive response from server
-            byte[] responseData = new byte[4096];
-            int bytesRead = inputStream.read(responseData);
-
-            // Convert response bytes to BMIResult object
-            BMIResult bmiResult = (BMIResult) FileConverter.bytesToObject(responseData);
+            BMIResult bmiResult = (BMIResult) objectInputStream.readObject();
 
             return bmiResult;
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             return null;
         }
     }
 }
-
